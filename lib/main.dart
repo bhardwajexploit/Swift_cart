@@ -1,7 +1,6 @@
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:foodify/screens/dashboard%20/dashboard_controller.dart';
 import 'package:get/get.dart';
 
 import 'core/constants/app_routes.dart';

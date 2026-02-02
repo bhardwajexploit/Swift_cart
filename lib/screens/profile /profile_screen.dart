@@ -164,7 +164,7 @@ class ProfileScreen extends GetView<DashboardController> {
                       onChanged: (v) => controller.nameController.value = v,
                       placeholder: "Enter Name",
                       placeholderStyle: const TextStyle(
-                        color: CupertinoColors.black,
+                        color:  CupertinoColors.systemGrey,
                       ),
                       style: const TextStyle(color: CupertinoColors.black),
                       padding: const EdgeInsets.all(12),
@@ -211,7 +211,7 @@ class ProfileScreen extends GetView<DashboardController> {
                       obscureText: !controller.isPasswordVisible.value,
                       placeholder: "••••••",
                       placeholderStyle: const TextStyle(
-                        color: CupertinoColors.black,
+                        color:  CupertinoColors.systemGrey,
                       ),
                       style: const TextStyle(color: CupertinoColors.black),
                       padding: const EdgeInsets.all(12),
@@ -239,11 +239,11 @@ class ProfileScreen extends GetView<DashboardController> {
 
                     CupertinoTextField(
                       controller: controller.passwordTextController,
-                      onChanged: (v) => controller.passwordController.value = v,
+                      onChanged: (v) => controller.passwordTextController.value = v as TextEditingValue,
                       obscureText: !controller.isPasswordVisible.value,
                       placeholder: "••••••",
                       placeholderStyle: const TextStyle(
-                        color: CupertinoColors.black,
+                        color: CupertinoColors.systemGrey,
                       ),
                       style: const TextStyle(color: CupertinoColors.black),
                       padding: const EdgeInsets.all(12),

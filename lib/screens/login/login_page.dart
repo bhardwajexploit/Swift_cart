@@ -4,7 +4,7 @@ import 'package:get/get.dart';
 import '../../core/theme/app_colours.dart';
 import 'login_controller.dart';
 
-class LoginPage extends GetView<Logincontroller> {
+class LoginPage extends GetView<LoginController> {
   const LoginPage({super.key});
 
   @override
@@ -23,7 +23,7 @@ class LoginPage extends GetView<Logincontroller> {
           bottom: false,
           child: Column(
             children: [
-              const Spacer(flex: 3),
+              const Spacer(flex: 2),
               Expanded(
                 flex:3 ,
                 child: ClipPath(
@@ -61,7 +61,7 @@ class LoginPage extends GetView<Logincontroller> {
                             textInputAction: TextInputAction.next,
                             placeholder: 'demo@email.com',
                             placeholderStyle: TextStyle(
-                              color: CupertinoColors.black,
+                              color: CupertinoColors.systemGrey,
                             ),
                             style: const TextStyle(color: CupertinoColors.black),  // Added for consistency
                             prefix: Padding(
@@ -90,7 +90,7 @@ class LoginPage extends GetView<Logincontroller> {
                             keyboardType: TextInputType.visiblePassword,
                             placeholder: "Enter Password",
                             placeholderStyle: TextStyle(
-                              color: CupertinoColors.black,
+                              color:  CupertinoColors.systemGrey,
                             ),
                             style: const TextStyle(color: CupertinoColors.black),
                             prefix: Padding(

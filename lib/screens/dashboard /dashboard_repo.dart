@@ -1,85 +1,83 @@
 import 'dart:async';
-
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
- // Original ApiService with callbacks
-import '../../core/constants/api_endpoints.dart';
 import '../../data/remote/api_service.dart';
-import '../../model/user_model.dart';
+import '../../data/remote/auth_services.dart';
 import '../../model/product_model.dart';
+import '../../model/user_model.dart';
 
 class DashboardRepo {
-  final _db = FirebaseFirestore.instance;
-  final _auth = FirebaseAuth.instance;
+  final AuthService _authService;
+  final ApiService _apiService;
+
+  DashboardRepo(this._authService, this._apiService);
+
+  // -------------------- USER --------------------
 
   Future<AppUser?> getCurrentUser() async {
     try {
-      final uid = _auth.currentUser?.uid;
+      final uid = _authService.uid;
       if (uid == null) return null;
 
-      final doc = await _db.collection('users').doc(uid).get();
+      final doc = await _authService.firestore
+          .collection('users')
+          .doc(uid)
+          .get();
+
       if (!doc.exists) return null;
 
       return AppUser.fromMap(doc.id, doc.data()!);
     } catch (e) {
-      debugPrint("getCurrentUser error: $e");
+      debugPrint("❌ [DashboardRepo] getCurrentUser error: $e");
       return null;
     }
   }
 
-  /// Update name
   Future<void> updateName(String name) async {
-    final uid = _auth.currentUser?.uid;
+    final uid = _authService.uid;
     if (uid == null) return;
 
-    await _db.collection("users").doc(uid).update({"name": name});
+    await _authService.firestore
+        .collection("users")
+        .doc(uid)
+        .update({"name": name});
   }
 
-  /// Update password
   Future<void> updatePassword({
     required String currentPassword,
     required String newPassword,
   }) async {
-    final user = _auth.currentUser;
-    if (user == null) return;
-
-    final email = user.email;
-    if (email == null) return;
-
-    final credential = EmailAuthProvider.credential(email: email, password: currentPassword);
-    await user.reauthenticateWithCredential(credential);
-    await user.updatePassword(newPassword);
-    await _auth.signOut();
+    await _authService.changePassword(newPassword, currentPassword: currentPassword);
   }
 
-  // Products using ApiService
-  Future<List<Product>> getProducts({int offset = 0, int limit = 10}) async {
+  // -------------------- PRODUCTS --------------------
+
+  Future<List<Product>> getProducts() async {
     final completer = Completer<List<Product>>();
 
-    final service = ApiService(
-      url: '${ApiEndpoints.urlPRODUCTS}?offset=$offset&limit=$limit',
-      data: null,
-    );
-
-    service.getRequest(
-      beforeSend: () => debugPrint("🔄 Fetching products..."),
+    _apiService.getRequest(
+      beforeSend: () =>
+          debugPrint("🔄 [DashboardRepo] Fetching products"),
       onSuccess: (responseData) {
         try {
-          if (responseData is List) {
-            final products = responseData.map((json) => Product.fromMap(json)).toList();
-            debugPrint("✅ Products fetched: ${products.length}");
+          if (responseData is Map &&
+              responseData['products'] is List) {
+            final list = responseData['products'] as List;
+
+            final products =
+            list.map((e) => Product.fromMap(e)).toList();
+
             completer.complete(products);
           } else {
+            debugPrint("⚠️ [DashboardRepo] Invalid product response");
             completer.complete([]);
           }
         } catch (e) {
-          debugPrint("❌ Products parsing error: $e");
+          debugPrint("❌ [DashboardRepo] Product parse error: $e");
           completer.complete([]);
         }
       },
       onError: (error) {
-        debugPrint("❌ Products API error: $error");
+        debugPrint("❌ [DashboardRepo] Product API error: $error");
         completer.complete([]);
       },
     );
@@ -90,28 +88,23 @@ class DashboardRepo {
   Future<Product?> getProductById(int id) async {
     final completer = Completer<Product?>();
 
-    final service = ApiService(
-      url: '${ApiEndpoints.urlPRODUCTS}/$id',
-      data: null,
-    );
-
-    service.getRequest(
-      beforeSend: () => debugPrint("🔄 Fetching product ID: $id"),
+    _apiService.getRequest(
+      beforeSend: () =>
+          debugPrint("🔄 [DashboardRepo] Fetching product ID: $id"),
       onSuccess: (responseData) {
         try {
-          if (responseData != null) {
-            final product = Product.fromMap(responseData);
-            completer.complete(product);
-          } else {
-            completer.complete(null);
-          }
+          completer.complete(
+            responseData != null
+                ? Product.fromMap(responseData)
+                : null,
+          );
         } catch (e) {
-          debugPrint("❌ Product parsing error: $e");
+          debugPrint("❌ [DashboardRepo] Product parse error: $e");
           completer.complete(null);
         }
       },
       onError: (error) {
-        debugPrint("❌ Product API error: $id - $error");
+        debugPrint("❌ [DashboardRepo] Product API error: $error");
         completer.complete(null);
       },
     );

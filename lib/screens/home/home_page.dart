@@ -1,146 +1,131 @@
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
+
 import '../../core/theme/app_colours.dart';
 import '../../model/product_model.dart';
 import '../dashboard /dashboard_controller.dart';
 import '../details/detail_page.dart';
-
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // 1. Ensure controller is registered to avoid crashes
-    final DashboardController controller = Get.isRegistered<DashboardController>()
-        ? Get.find<DashboardController>()
-        : Get.put(DashboardController());
+    final DashboardController controller = Get.find<DashboardController>();
 
-    return Container(
-      color: AppColours.bG,
-      child: CupertinoPageScaffold(
-        backgroundColor: AppColours.bG,
-        navigationBar: CupertinoNavigationBar(
-          backgroundColor: AppColours.kPrimaryPurple,
-          border: null, // Removed border for seamless look
-          middle: const Text(
-            "SwiftCart",
-            style: TextStyle(
-              color: CupertinoColors.white,
-              fontWeight: FontWeight.w600,
-              fontSize: 25,
-            ),
-          ),
-          trailing: CupertinoButton(
-            padding: EdgeInsets.zero,
-            child: const Icon(CupertinoIcons.square_arrow_right,
-                color: CupertinoColors.white),
-            onPressed: () {
-              controller.logout();
-            },
+    return CupertinoPageScaffold(
+      backgroundColor: AppColours.bG,
+      navigationBar: CupertinoNavigationBar(
+        backgroundColor: AppColours.kPrimaryPurple,
+        border: null,
+        middle: const Text(
+          "SwiftCart",
+          style: TextStyle(
+            color: CupertinoColors.white,
+            fontWeight: FontWeight.w600,
+            fontSize: 25,
           ),
         ),
-        child: SafeArea(
-          child: Obx(() {
-            // ---------------------------------------------
-            // ✅ FIXED: LOADER VISIBILITY
-            // ---------------------------------------------
-            if (controller.productsLoading.value) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const CupertinoActivityIndicator(
-                      radius: 16,
-                      color: CupertinoColors.white, // Changed to WHITE so it shows on purple bg
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      "Loading Products...",
-                      style: TextStyle(
-                        color: CupertinoColors.white.withValues(alpha: 0.8),
-                        fontSize: 14,
+        trailing: CupertinoButton(
+          padding: EdgeInsets.zero,
+          onPressed: controller.logout,
+          child: const Icon(
+            CupertinoIcons.square_arrow_right,
+            color: CupertinoColors.white,
+          ),
+        ),
+      ),
+      child: SafeArea(
+        child: Obx(() {
+          // ---------------- LOADING ----------------
+          if (controller.isLoading.value) {
+            return const Center(
+              child: CupertinoActivityIndicator(radius: 18),
+            );
+          }
+
+          // ---------------- ERROR ----------------
+          if (controller.errorMessage.isNotEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    CupertinoIcons.exclamationmark_triangle_fill,
+                    size: 56,
+                    color: CupertinoColors.systemRed,
+                  ),
+                  const SizedBox(height: 12),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                    child: Text(
+                      controller.errorMessage.value,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        color: CupertinoColors.white,
                         decoration: TextDecoration.none,
                       ),
                     ),
-                  ],
-                ),
-              );
-            }
-
-            if (controller.productsError.value.isNotEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      CupertinoIcons.exclamationmark_triangle_fill,
-                      size: 64,
-                      color: CupertinoColors.white, // Changed to white for visibility
-                    ),
-                    const SizedBox(height: 16),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 32),
-                      child: Text(
-                        controller.productsError.value,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: CupertinoColors.white,
-                          height: 1.4,
-                          decoration: TextDecoration.none,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    CupertinoButton.filled(
-                      onPressed: controller.fetchAllProducts,
-                      child: const Text("Retry"),
-                    ),
-                  ],
-                ),
-              );
-            }
-
-            return CustomScrollView(
-              physics: const BouncingScrollPhysics(), // iOS bounce effect
-              slivers: [
-                const SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          "Products",
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w600,
-                            color: CupertinoColors.white,
-                            decoration: TextDecoration.none,
-                          ),
-                        ),
-                      ],
-                    ),
                   ),
-                ),
-                SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  sliver: SliverGrid.count(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                    childAspectRatio: 0.68,
-                    children: controller.productsList
-                        .map((product) => _ProductCard(product: product))
-                        .toList(),
+                  const SizedBox(height: 20),
+                  CupertinoButton.filled(
+                    onPressed: controller.refreshProducts,
+                    child: const Text("Retry"),
                   ),
-                ),
-                const SliverToBoxAdapter(child: SizedBox(height: 100)),
-              ],
+                ],
+              ),
             );
-          }),
-        ),
+          }
+
+          // ---------------- EMPTY ----------------
+          if (controller.productsList.isEmpty) {
+            return const Center(
+              child: Text(
+                "No products available",
+                style: TextStyle(
+                  color: CupertinoColors.white,
+                  decoration: TextDecoration.none,
+                ),
+              ),
+            );
+          }
+
+          // ---------------- PRODUCTS ----------------
+          return CustomScrollView(
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+                  child: Text(
+                    "Products",
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w600,
+                      color: CupertinoColors.white,
+                      decoration: TextDecoration.none,
+                    ),
+                  ),
+                ),
+              ),
+              SliverPadding(
+                padding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                sliver: SliverGrid.count(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  childAspectRatio: 0.68,
+                  children: controller.productsList
+                      .map((p) => _ProductCard(product: p))
+                      .toList(),
+                ),
+              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 100)),
+            ],
+          );
+        }),
       ),
     );
   }
@@ -156,10 +141,10 @@ class _ProductCard extends StatelessWidget {
       onTap: () => Get.to(
             () => const ProductDetailPage(),
         arguments: product,
-        preventDuplicates: false,
       ),
       child: Container(
         decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -168,13 +153,10 @@ class _ProductCard extends StatelessWidget {
               CupertinoColors.systemBackground,
             ],
           ),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-              color: AppColours.kPrimaryPurple.withValues(alpha: 0.3)),
           boxShadow: [
             BoxShadow(
               color: AppColours.kPrimaryPurple.withValues(alpha: 0.2),
-              blurRadius: 12,
+              blurRadius: 10,
               offset: const Offset(0, 4),
             ),
           ],
@@ -184,17 +166,15 @@ class _ProductCard extends StatelessWidget {
           children: [
             Expanded(
               child: ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                borderRadius:
+                const BorderRadius.vertical(top: Radius.circular(16)),
                 child: Image.network(
-                  product.images,
+                  product.images.isNotEmpty
+                      ? product.images.first
+                      : product.thumbnail,
                   fit: BoxFit.cover,
                   errorBuilder: (_, _, _) => Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(colors: [
-                        AppColours.kPrimaryPurple,
-                        AppColours.kLightPurple,
-                      ]),
-                    ),
+                    color: AppColours.kPrimaryPurple,
                     child: const Icon(
                       CupertinoIcons.photo,
                       color: CupertinoColors.white,
@@ -208,37 +188,30 @@ class _ProductCard extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min, // Hug content
                 children: [
-                  // Title
                   Text(
                     product.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontWeight: FontWeight.w600,
                       fontSize: 14.5,
+                      fontWeight: FontWeight.w600,
                       color: CupertinoColors.black,
                       decoration: TextDecoration.none,
                     ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    product.category,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                  ),
-
-                  const SizedBox(height: 4),
-
-                  // Category
-                  Text(
-                    product.category.name,
                     style: const TextStyle(
                       fontSize: 12,
                       color: CupertinoColors.secondaryLabel,
                       decoration: TextDecoration.none,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                   ),
-
                   const SizedBox(height: 8),
-
                   Text(
                     "₹${product.price.toStringAsFixed(0)}",
                     style: TextStyle(

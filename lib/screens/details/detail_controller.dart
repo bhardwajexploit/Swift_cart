@@ -14,10 +14,10 @@ class ProductDetailController extends GetxController {
     super.onInit();
   }
 
-  void addToCartAndGoToCartTab() {
-    debugPrint("1");
+  void addToCart() {
     dashboard.addToCart(product);
-    dashboard.goToTab();
+    Get.back();
+    dashboard.goToCartTab();
 
   }
 
